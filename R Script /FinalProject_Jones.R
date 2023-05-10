@@ -294,7 +294,7 @@ df_test <- testing(df_split)
       
       # because the prediction is a continuous variable, mode of the models will be regression
       
-      # TREE MODEL #
+  # TREE MODEL #
       
       print('Starting TREE')
       
@@ -351,7 +351,7 @@ df_test <- testing(df_split)
         mutate(alg = "tree") %>% select(-starts_with(".config"))
       
       
-      # NEURAL NETWORK #
+  # NEURAL NETWORK #
       
       print('Starting NNET')
       # set up the task and the engine
@@ -403,7 +403,7 @@ df_test <- testing(df_split)
         mutate(alg = "nnet") %>% select(-starts_with(".config"))
       
       
-      # K NEAREST NEIGHBOR #
+ # K NEAREST NEIGHBOR #
       
       print('Starting KNN')
       # set up the task and the engine
