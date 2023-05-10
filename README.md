@@ -5,7 +5,7 @@ Final project for Econ 5253, Data Science for Economists with Dr. Tyler Ransom. 
 |--------------|--------------------------------------------------------------|
 | Email | [trevorjones@ou.edu](mailto:trevorjones@ou.edu) |
 | Affiliation | University of Oklahoma Department of Economics|
-| GitHub | [TrevorRJones]([https://github.com/TrevorRJones]) |
+| GitHub | [TrevorRJones](https://github.com/TrevorRJones) |
 
 ## Replication of Results ##
 1. In R, install the package nflreadr
