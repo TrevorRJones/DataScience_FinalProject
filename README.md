@@ -11,5 +11,5 @@ The focus of this project is application of multiple machine learning methods to
 
 ## Replication of Results ##
 1. In R, install the package nflreadr [link](https://nflreadr.nflverse.com/)
-2. Load in NFL read R, specifically the dictionary draft [link](https://cloud.r-project.org/web/packages/nflreadr/vignettes/dictionary_contracts.html)
+2. Load in NFL read R, specifically the data dictionary draft [link](https://cloud.r-project.org/web/packages/nflreadr/vignettes/dictionary_contracts.html)
 3. Download and run the provided R script in this repository
