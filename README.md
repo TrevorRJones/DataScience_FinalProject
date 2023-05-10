@@ -1,5 +1,7 @@
 # DataScience_FinalProject
-Final project for Econ 5253, Data Science for Economists with Dr. Tyler Ransom. Project focus is applications of machine learning and the NFL draft.
+Final project for Econ 5253, Data Science for Economists with Dr. Tyler Ransom. 
+
+The focus of this project is application of multiple machine learning methods to NFL combine data with the goal of predicting player draft stock. 
 
 |  | Trevor Jones |
 |--------------|--------------------------------------------------------------|
