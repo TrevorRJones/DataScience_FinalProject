@@ -1,0 +1,438 @@
+\documentclass[12pt,english]{article}
+\usepackage{mathptmx}
+
+\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{darkblue}{RGB}{0.,0.,139.}
+
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+
+\usepackage{amsmath}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{setspace}
+\usepackage{lipsum}
+\usepackage{siunitx}
+
+\usepackage[authoryear]{natbib}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage[flushleft]{threeparttable}
+\usepackage{graphicx}
+\usepackage[english]{babel}
+\usepackage{pdflscape}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+ breaklinks=true,pdfborder={0 0 0},backref=false,
+ colorlinks,citecolor=black,filecolor=black,
+ linkcolor=black,urlcolor=black]
+ {hyperref}
+\usepackage[all]{hypcap} % Links point to top of image, builds on hyperref
+\usepackage{breakurl}    % Allows urls to wrap, including hyperref
+
+\linespread{2}
+
+\begin{document}
+
+\begin{singlespace}
+\title{Predicting NFL Draft Stock with Combine Statistics and Machine Learning}
+\end{singlespace}
+
+
+\author{Trevor R. Jones\thanks{Department of Economics, University of Oklahoma.\
+E-mail~address:~\href{mailto:trevorjones@ou.edu}{trevorjones@ou.edu}}}
+
+% \date{\today}
+\date{May 9, 2023}
+
+\maketitle
+
+\begin{abstract}
+\begin{singlespace}
+This paper examines the impact of National Football League combine tests and measurements on individual athletes' potential draft stock, specifically focusing on draft overall and whether a player is drafted or left in undrafted free agency. To do this, three approaches are applied. The first is a linear regression that predicts a players draft stock with their weight, height, 40-yard dash time, 3-cone drill time, shuttle time, vertical jump height, and broad jump distance. The second model I use the same independent variables, but use a binary variable for whether an athlete was drafted, creating a logit model. In the third model, I created two tree models with the goal of predicting draft stock and whether a player is drafted. Both the linear regression and logit models show statistical significance for a wide number of combine measurements. In the two machine learning models, the model predicting draft stock was inaccurate with the given, but the model predicting whether a player was drafted proved to be accurate. 
+\end{singlespace}
+
+\end{abstract}
+\vfill{}
+
+
+\pagebreak{}
+
+
+\section{Introduction}\label{sec:intro}
+After the conclusion of their final college football season, typically sometime between December and January, prospective professional players shift their focus to training for the National Football League (NFL) Combine. This event serves as a crucial opportunity for players to showcase their abilities and potential to NFL teams, with the goal of outperforming other prospects at their position and improving their draft stock. During the NFL Combine, which takes place annually in March, players undergo several days of physical tests, drills, and measurements. These tests and measurements receive significant media attention, as they can have a significant impact on a player's draft position and overall professional prospects.
+
+The physical tests at the NFL Combine include two speed-based tests: the 40-yard dash and the 20-yard shuttle. The 40-yard dash measures a player's straight-line speed over a distance of 40 yards, while the 20-yard shuttle measures a player's lateral quickness and change of direction ability. In addition, there is an agility-focused test called the 3-cone drill, which measures a player's ability to change direction quickly while maintaining their speed. There are also two "explosive" measurements at the NFL Combine: the vertical jump and the broad jump. The vertical jump measures a player's ability to jump vertically, while the broad jump measures a player's ability to jump horizontally. Furthermore, there is a strength-based test in which players are required to complete as many repetitions as possible of bench pressing 225 pounds.
+
+In addition to the physical tests, teams also receive official measurements of a player's height, weight, wingspan, and hand size. These measurements can be critical for certain positions, such as offensive and defensive linemen. While the physical tests receive a lot of attention, players also undergo a series of position-specific drills at the NFL Combine. These drills are more qualitatively measured than quantitatively, so they are not included in the analysis of the physical tests. 
+
+Overall, the NFL Combine is a significant event for prospective professional football players. It provides them with a chance to showcase their skills and potential to NFL teams, with the goal of improving their draft position and overall professional prospects. 
+
+\section{Literature Review}\label{sec:litreview}
+Teams evaluate many factors when deciding which players to draft and sign during free agency periods. While college performance statistics often play a leading role in these decisions, combine performances also help teams assess a player's overall athleticism. Despite the NFL combine taking place since 1982, there has been relatively little research conducted on its impact on draft stock and player value.
+
+ In their study, "The National Football League Combine: A Reliable Predictor of Draft Status?", \citet{McGee2003TheNF} measured the impact of performance metrics in the NFL combine on draft position by position group. The paper analyzed various measurements, including height, weight, bench press, 10-yard dash, 20-yard dash, 40-yard dash, pro-agility shuttle, 60-yard shuttle, 3-cone drill, broad jump, and vertical jump. Through these measurements, they found that the combine statistics accurately predicted the draft status skill position groups including running backs, wide receivers, and defensive backs in the 2000 NFL draft. 
+
+Additional studies have investigated the relationship between combine performance and draft results. \citet{Robbins2010TheNF} published a study titled "Does Normalized Data Predict Performance in the NFL Draft?" that examined the impact of the combine on player draft stock between the years 2005-2009. The study utilized the same combine tests as the 2003 study but opted for a holistic view of potential players, rather than investigating the impact of these tests on the draft stock of various positions. Subsequently, Robbins conducted a further investigation that shed light on the importance of measures of speed and explosiveness through straight sprints and jumping tests for teams and their scouts when making decisions on draft day. Robbins contends that the data studied implied that teams prioritize player attributes over pure physical performance metrics.
+
+\citet{Sierer2008TheNF} conducted a study which investigated the impact of the National Football League (NFL) Combine on a player's draft selection. Titled "The National Football League Combine: Performance Differences Between Drafted and Nondrafted Players Entering the 2004 and 2005 Drafts," the research examined the data from the 2004 and 2005 NFL Combines and analyzed the performance of players across three skill categories: skill, big skill, and linemen.The study revealed that players who were drafted outperformed their nondrafted counterparts in various combine tests. Specifically, in the skill group, drafted players performed better than nondrafted athletes in the 40-yard dash, 3-cone drill, pro-agility drill, and the vertical jump. Similarly, drafted athletes in the big skill group outperformed their undrafted peers in the 40-yard dash and 3-cone drill, whereas linemen who were drafted outperformed undrafted players in the bench press and three cone drill. Sierer and Battaglini claim that these test results can significantly influence a player's selection in the NFL Draft. Overall, their findings indicate that performing well in the combine tests may increase a player's likelihood of being drafted, and hence, can be deemed as an important factor in NFL player selection.
+
+Various studies have examined the correlation between a player's performance in the NFL Combine and their on-the-field play. \citet{Kuzmits2008TheNC} conducted an investigation in their paper titled "The NFL Combine: Does It Predict Performance in the National Football League?" that explored the association between combine statistics and overall performance. The researchers analyzed the combine data from 1999 to 2004 and discovered that there was little to no relationship between the combine and real-time performance. However, they did find that 40-yard dash times had a statistically significant relationship with the rushing performance of quarterbacks and running backs.
+
+Furthermore, \citet{Park2016DoesTN} conducted a study in his paper titled "Does the NFL Combine Really Matter," which supports the notion that there is a lack of correlation between combine data and on-the-field performance. Park's findings indicate that while combine data may illustrate a player's potential, it is an insufficient predictor for actual production in game scenarios. These results suggest that while the combine can offer insight into a player's abilities, it may not be the most reliable indicator of their future performance in professional football.
+
+Despite the negative implications that the aforementioned studies suggest regarding the NFL combine, the literature on this topic is not in complete agreement. \citet{Parekh2017TheNC} argue that when considering an athlete's individual position and position-based statistics, the relationship between combine data and player performance varies significantly. In their paper titled "The NFL Combine as a Predictor of On-field Success," the researchers examined position-based data from 2006 to 2013 and discovered that there are connections between speed-centered and strength-centered positions and their respective tests at the NFL combine. Their findings suggest that while the impact of the NFL combine may not be universal across all positions, it can still provide valuable insights into the potential on-field success of players in certain positions.
+
+\section{Data}\label{sec:data}
+The primary data source for this research comprises official National Football League (NFL) combine statistics and draft results. The data was extracted from official league sources using the nflreadr package in R Studio, accessible at https://nflreadr.nflverse.com. Specifically, the data pertains to NFL combine and draft data spanning the years 2013 to 2022, and encompasses combine performance statistics for all participating players, as well as draft round and overall draft position for selected players. The initial dataset comprised 3672 observations across 18 variables. Table 1 provides a comprehensive definition of all variables used in the models.
+
+Upon inspection, the data exhibited a substantial number of missing values and necessitated imputation. Table 2 presents an initial summary of the raw data. Notably, there appeared to be discernible patterns in the drills that were opted out by players of different positions. For instance, players in speed-based positions, such as wide receivers, were more likely to abstain from strength-based drills. Conversely, players in power-based positions, such as offensive linemen, were more likely to forgo speed-based drills. This phenomenon has been attributed to players' agents or coaches discouraging them from participating in certain drills, as a suboptimal performance could negatively impact a team's evaluation of the player, even if they excelled in measures more pertinent to their position on the field. A case in point is the 2018 decision by Louisville quarterback Lamar Jackson to abstain from the 40-yard dash based on advice from his associates that a favorable time would detract from his performance in passing drills. 
+
+The observed trends in the data suggest that the missingness is not random, but rather associated with an external factor, which poses a significant challenge for the validity and applicability of this study. To address this issue, multiple imputation was employed, specifically multiple imputation by chained equations (MICE), to minimize the potential biases and produce a more reliable and robust imputed dataset for statistical analysis, compared to other imputation methods. Tables 3 and 4 presents a summary of the imputed data. 
+
+Subsequent to the imputation procedures, several variables were created to enhance the overall interpretation of the data. Firstly, dummy variables were generated for each individual position, with the original labels from the dataset being retained to maximize accuracy. For instance, positions like "edge" and "outside linebacker" were kept separate, given that many college defensive ends enter the league with a focus on playing exclusively as an edge rusher. Additionally, dummy variables were created for each of the Power Five conferences, including the Atlantic Coast Conference (ACC), Pacific Athletic Conference (PAC-12), the Big-12 Conference, and the Southeastern Conference (SEC). Players were designated as 1 if they attended a school within the respective conference, and 0 if they did not. Notably, the last major conference realignment occurred two years prior to the data analyzed here (2011), ensuring the accuracy of the conference binary variables. Lastly, a binary variable was created to indicate whether or not a player was drafted in their respective draft.
+
+To form a preliminary understanding of the overall distribution for combine performances, please see figure 1 for the overall distribution of 40-yard dash performances, figure 2 for bench press performances, and figure 3 for broad jump performances. All three figures break down the level drafted and undrafted performed at in the combine.
+
+\section{Empirical Methods}\label{sec:methods}
+The main quantitative methods in this paper are the multiple linear regression, logit model, and tree model. The former is utilized to understand the overall trends in our data, the latter to investigate the machine learning technique can provide an accurate prediction based on the data. 
+
+The following model regresses an athlete’s weight, height, 40-yard dash time, vertical jump height, broad jump length, and shuttle time on the number overall pick an athlete is selected. Using a linear regression where Y is the dependent variable and X is all independent variables, the following model is obtained:
+\begin{equation}
+\label{eq:1}
+\begin{split}
+    Overall = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical \\ & + \beta_{5}BroadJump + \beta_{6}Cone + \beta_{7}Shuttle + \varepsilon
+\end{split}
+\end{equation}
+Where Overall is a discrete numerical variable for the number overall an athlete is selected in the National Football League Draft. 
+
+The following model adds the Conference dummy variables in addition to basic combine statistics, the intuition behind this is factoring in "raw" talent that power-five level schools may have picked out in the college recruiting process. The model is as follows:
+\begin{equation}
+\label{eq:2}
+\begin{split}
+    Overall = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical \\ & + \beta_{5}BroadJump + \beta_{6}Cone + \beta_{7}Shuttle + \beta_{8}ACC \\ & + \beta_{9}BIG10 + \beta_{10}BIG12 + \beta_{11}PAC12 + \beta_{12}SEC + \varepsilon
+\end{split}
+\end{equation}
+
+Next, I utilize a logit model to estimate the same variables in equation 1 and equation 2 on the binary variable Drafted, which equals 1 if the athlete was drafted following the combine and 0 if the athlete was not drafted. The probits models are as follows: 
+\begin{equation}
+\label{eq:3}
+\begin{split}
+    Drafted = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical \\ & + \beta_{5}BroadJump + \beta_{6}Cone + \beta_{7}Shuttle + \varepsilon
+\end{split}
+\end{equation}
+\begin{equation}
+\label{eq:4}
+\begin{split}
+    Drafted = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical \\ & + \beta_{5}BroadJump + \beta_{6}Cone + \beta_{7}Shuttle + \beta_{8}ACC \\ & + \beta_{9}BIG10 + \beta_{10}BIG12 + \beta_{11}PAC12 + \beta_{12}SEC + \varepsilon
+\end{split}
+\end{equation}
+
+Following the basic investigation into our data, we move into the central question of this paper: can combine statistics be reliably used to predict draft outcomes? To answer this question, I utilized the machine learning method of tree models. Using the tidymodels package in R, I created two tree models: one regression-based and one classification based. In both models, I chose to use an 80-20 percent split in training and test data with a three cross fold validation method. 
+In these models, I added in dummy variables for each individual position to the formulas to assist the model in its overall prediction. Equation 5 corresponds to the formula for the regression-based tree model. Equation 6 corresponds to the classification-based tree model. 
+\begin{equation}
+\label{eq:3}
+\begin{split}
+    Overall = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical + \beta_{5}BroadJump + \beta_{6}Cone \\& + \beta_{7}Shuttle + + \beta_{8}C + \beta_{9}CB + \beta_{10}DB + \beta_{11}DE + \beta_{12}DL + \beta_{13}DT + \beta_{14}Edge \\& + \beta_{15}FB + \beta_{16}ILB + \beta_{17}K + \beta_{18}LB + \beta_{19}LS + \beta_{20}OG + \beta_{21}OL + \beta_{22}OLB \\& + \beta_{23}OT + \beta_{24}P + \beta_{25}QB + \beta_{26}RB + \beta_{27}S + \beta_{28}TE + \beta_{29}WR + \varepsilon
+\end{split}
+\end{equation}
+\begin{equation}
+\label{eq:3}
+\begin{split}
+    Drafted = & \beta_{0} + \beta_{1}Weight + \beta_{2}Height + \beta_{3}Bench + \beta_{4}Vertical + \beta_{5}BroadJump + \beta_{6}Cone \\& + \beta_{7}Shuttle + + \beta_{8}C + \beta_{9}CB + \beta_{10}DB + \beta_{11}DE + \beta_{12}DL + \beta_{13}DT + \beta_{14}Edge \\& + \beta_{15}FB + \beta_{16}ILB + \beta_{17}K + \beta_{18}LB + \beta_{19}LS + \beta_{20}OG + \beta_{21}OL + \beta_{22}OLB \\& + \beta_{23}OT + \beta_{24}P + \beta_{25}QB + \beta_{26}RB + \beta_{27}S + \beta_{28}TE + \beta_{29}WR + \varepsilon
+\end{split}
+\end{equation}
+
+\section{Research Findings}\label{sec:results}
+The results of models 1 and 2 for the draft overall variable are presented in Table 5. Model 1 indicates that nearly every combine measurement holds statistical significance in draft order. To provide a concise summary, the findings will focus on the 40-yard dash time (speed), bench press (strength), and broad jump (explosiveness). Model 1 indicates that an increase of 1 second in the 40-yard dash time, on average, can decrease an individual's draft stock by 85.682 spots. Surprisingly, the model showed that an increase in the number of reps on the bench press results in an increase in the overall draft position of a player. Holding all other factors constant, an increase of 1 rep on the bench press increases a player's draft stock by 1.459 spots. This phenomenon can be attributed to the significant role of total strength output for players on the line of scrimmage, which is less crucial for skill and big-skill players in the draft, resulting in its overall lower importance. Moreover, an increase of 1 inch in the broad jump can, on average, increase a prospect's draft stock by 1.17 spots while holding all other factors constant. Since football is an explosive-based sport that requires substantial leg strength across positions, it is reasonable to consider this measurement when scouting and selecting potential players. Despite the significant statistical significance of the variables in this model, the R-squared value is low (0.103), implying that the model is not an ideal fit for the data and cannot be reliably used for prediction.
+
+The findings from model 2 demonstrate similar results to model 1 in regards to the 40-yard dash, bench press, and broad jump. However, the parameters of interest in this model are the dummy variables for the power 5 conferences, all of which exhibit strong statistical significance and increase the draft stock of their players. Within the years under study, the dummy variable that has the least impact on draft stock is the Big 12 Conference with a coefficient of -5.789. This is followed by the ACC with a coefficient of -11.205, the Big 10 with -11.947, the PAC 12 with -13.284, and the SEC with the greatest impact, displaying a significant coefficient of -22.941. These results suggest that athletes who attend power 5 schools have a notable advantage during the draft season. While this information is not solely focused on combine-related measurements, it serves as a fundamental player indicator and an approximation for inherent talent beyond objective performance metrics.
+
+The results for the logit models are presented in Table 6. Model 3 examines the same parameters of interest as Model 1: 40-yard dash, bench press, and broad jump. The results indicate that an increase of one second in the 40-yard dash, on average, leads to a decrease of 3.483 in the log odds of a player being drafted, holding all other factors constant. Interestingly, the results for bench press show that a one-rep increase can result in a 0.015 increase in log odds of being drafted, on average, holding all other factors fixed. This suggests that while upper body strength may not be a major factor in overall draft order, it can still play a role in a player's likelihood of being selected in the draft. Additionally, a one inch increase in the broad jump, on average, results in a 0.006 increase in log odds of being selected in the draft.
+
+Model 4 shows that playing in a power five conference provides a significant advantage in the draft process. Athletes who played in the Big 12 conference have the least impact on draft odds, with a coefficient of 0.148. This is followed by the Big 10 with 0.246, the ACC with 0.426, the PAC 12 with 0.435, and the SEC with the largest impact at 0.450. It is important to note that these results are consistent with previous research on the importance of college conference affiliation in the draft process.
+
+Next, we look at the performance of two machine learning models in predicting the overall draft stock and the draft selection of NFL athletes based on their combine performance. Table 7 presents the results of both the regression and classification-based tree models. The first model, which utilizes a regression-based approach, shows a cost complexity of 0, tree depth of 20, minimum node size of 30, and an estimated error rate of 54.25 percent. The cost complexity parameter indicates that the model may have overfit the training data, resulting in lower accuracy when tested with new data. The high minimum node size further suggests that the model is overly complex and may lead to a reduction in accuracy. The estimated error rate of 54.25 percent indicates that the model alone may not be sufficient to accurately predict an athlete's overall draft stock.
+
+The second model, which adopts a classification-based approach, outperforms the first model. It has a cost complexity of 0, tree depth of 20, minimum node size of 10, and a significantly lower estimated error rate of 0.77 percent. Although the cost complexity parameter remains a concern for overfitting, the lower minimum node size suggests that the model achieves a better balance between complexity and accuracy. Furthermore, the low misclassification rate of 0.77 percent indicates that the model can provide reliable predictions for whether an athlete will be selected in the NFL draft. The findings suggest that combine performance is a strong predictor for NFL draft selection, and the classification-based tree model may serve as a practical tool for decision-making in this context.
+
+\section{Conclusion}\label{sec:conclusion}
+The application of statistical analysis and machine learning methods to the National Football League combine and draft has yielded several noteworthy findings. Firstly, the combine results are a critical factor in predicting draft stock, particularly with respect to major speed and explosive movements such as the 40 yard dash and horizontal jump. Conversely, the total repetitions on the bench press have a much lesser impact on draft stock. The individual combine performance can be particularly crucial for marginal players, who are on the threshold between being drafted and having to seek an opportunity in free agency. Regardless of the drill or movement, a standout performance in the combine can make or break prospective players. Secondly, attending a school in a power five conference enhances overall draft stock and increases the probability of being drafted, with the SEC outperforming all other power five schools in this study. Finally, the combine performance is a better predictor of whether or not a player is drafted than their draft stock.
+
+However, there are certain limitations that must be acknowledged in the interpretation of the study's results. Firstly, the raw data for this study is significantly flawed due to a significant amount of missing data that is not at random. Although appropriate imputation methods were employed, the outcomes may be subject to bias as a result of the imputation process. Secondly, the evaluation of players also involves an analysis of college statistics and tape, which was not considered in this study. In the evaluation of draft stock and player performance, it is essential to take a holistic view of an athlete, rather than simply relying on numbers. While combine statistics can certainly assist in player evaluation, they cannot replace raw talent, development, and coaching in the long-term.
+
+In conclusion, this study can serve as a basis for the further application of machine learning methods in predicting NFL draft outcomes. The methods employed in this study can be easily applied to player outcomes and performance, and can assist coaches, managers, and teams in selecting players and athletes.
+
+\vfill
+\pagebreak{}
+\begin{spacing}{1.0}
+\bibliographystyle{jpe}
+\bibliography{FinalProject_Jones}
+\addcontentsline{toc}{section}{References}
+\end{spacing}
+
+\vfill
+\pagebreak{}
+\clearpage
+
+\section{Figures and Tables}\label{sec:figures and tables}
+
+% Figure 1
+\begin{figure}[ht]
+    \centering
+    \bigskip{}
+    \includegraphics{FORTYHISTO.png}
+    \caption{Histogram of 40-yard dash times among drafted and undrafted athletes}
+    \label{fig:my_label}
+\end{figure}
+
+% Figure 2
+\begin{figure}[ht]
+    \centering
+    \bigskip{}
+    \includegraphics{BENCHHISTO.png}
+    \caption{Histogram of bench press repetitions among drafted and undrafted athletes}
+    \label{fig:my_label}
+\end{figure}
+
+% Figure 3
+\begin{figure}[ht]
+    \centering
+    \bigskip{}
+    \includegraphics{JUMPHISTO.png}
+    \caption{Histogram of broad jump distance among drafted and undrafted athletes}
+    \label{fig:my_label}
+\end{figure}
+
+% Table 1
+\begin{table}[ht]
+\caption{Variable Codes and Descriptions}
+\label{tab:descriptions} 
+\begin{center}
+ \begin{tabular}{|c|c|} 
+ \hline
+ \textbf{Variable} & \textbf{Description}  \\ [0.5ex] 
+ \hline\hline
+ draft\_ovr & The overall number selected in the NFL draft \\ 
+ \hline 
+ pos & Position of player, broken up into dummy variables for models \\
+ \hline 
+ ht & Height of athlete (inches) \\
+\hline  
+ wt & Weight of athlete (pounds)\\
+ \hline 
+ forty & 40-yard dash time (seconds) \\
+\hline 
+ bench & Repetitions of 225 lbs bench press \\
+\hline 
+ vertical & Height of vertical jump (inches) \\
+\hline 
+ broad\_jump & Distance of broad jump (inches) \\
+\hline 
+ cone & 3-Cone drill time (seconds) \\
+\hline 
+ shuttle & Shuttle time (seconds) \\
+\hline 
+ drafted & Dummy variable for whether an athlete was drafted \\
+\hline  
+ SEC & Dummy variable for whether an athlete played at a school in the SEC Conference \\
+\hline  
+ Big12 & Dummy variable for whether an athlete played at a school in the Big 12 Conference \\
+ \hline 
+ Big10 & Dummy variable for whether an athlete played at a school in the Big 10 Conference \\
+\hline 
+ PAC12 & Dummy variable for whether an athlete played at a school in the PAC 12 Conference \\
+\hline 
+ ACC & Dummy variable for whether an athlete played at a school in the ACC Conference \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+% Table 2
+\begin{table}
+\caption{Summary Statistics: Raw Data}
+\centering
+\begin{tabular}[t]{lrrrrrrr}
+\toprule
+  & Unique (\#) & Missing (\%) & Mean & SD & Min & Median & Max\\
+\midrule
+draft\_year & 12 & 37 & \num{2017.9} & \num{3.1} & \num{2013.0} & \num{2018.0} & \num{2023.0}\\
+draft\_round & 8 & 37 & \num{3.8} & \num{1.9} & \num{1.0} & \num{4.0} & \num{7.0}\\
+draft\_ovr & 260 & 37 & \num{116.1} & \num{70.9} & \num{1.0} & \num{111.0} & \num{262.0}\\
+ht & 20 & 1 & \num{73.9} & \num{2.7} & \num{64.0} & \num{74.0} & \num{82.0}\\
+wt & 198 & 1 & \num{241.2} & \num{45.4} & \num{144.0} & \num{230.0} & \num{384.0}\\
+forty & 145 & 14 & \num{4.8} & \num{0.3} & \num{4.2} & \num{4.7} & \num{5.8}\\
+bench & 42 & 36 & \num{19.9} & \num{6.3} & \num{3.0} & \num{20.0} & \num{44.0}\\
+vertical & 57 & 22 & \num{32.9} & \num{4.2} & \num{17.5} & \num{33.0} & \num{46.5}\\
+broad\_jump & 58 & 23 & \num{116.6} & \num{9.2} & \num{82.0} & \num{118.0} & \num{147.0}\\
+cone & 199 & 44 & \num{7.3} & \num{0.4} & \num{6.3} & \num{7.2} & \num{8.8}\\
+shuttle & 137 & 41 & \num{4.4} & \num{0.3} & \num{3.8} & \num{4.4} & \num{5.4}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 3
+\begin{table}
+\caption{Summary Statistics for Imputed Data: Drafted Players}
+\centering
+\begin{tabular}[t]{lrrrrrrr}
+\toprule
+  & Unique (\#) & Missing (\%) & Mean & SD & Min & Median & Max\\
+\midrule
+.imp & 50 & 0 & \num{25.5} & \num{14.4} & \num{1.0} & \num{25.5} & \num{50.0}\\
+.id & 2361 & 0 & \num{1181.0} & \num{681.6} & \num{1.0} & \num{1181.0} & \num{2361.0}\\
+draft\_year & 11 & 0 & \num{2017.9} & \num{3.1} & \num{2013.0} & \num{2018.0} & \num{2023.0}\\
+draft\_round & 7 & 0 & \num{3.8} & \num{1.9} & \num{1.0} & \num{4.0} & \num{7.0}\\
+draft\_ovr & 259 & 0 & \num{116.1} & \num{70.8} & \num{1.0} & \num{111.0} & \num{262.0}\\
+ht & 17 & 0 & \num{74.0} & \num{2.7} & \num{65.0} & \num{74.0} & \num{81.0}\\
+wt & 190 & 0 & \num{243.8} & \num{45.9} & \num{155.0} & \num{234.0} & \num{384.0}\\
+forty & 135 & 0 & \num{4.7} & \num{0.3} & \num{4.2} & \num{4.6} & \num{5.8}\\
+bench & 40 & 0 & \num{19.9} & \num{6.6} & \num{3.0} & \num{20.0} & \num{44.0}\\
+vertical & 51 & 0 & \num{33.3} & \num{4.2} & \num{19.5} & \num{33.5} & \num{45.0}\\
+broad\_jump & 54 & 0 & \num{117.3} & \num{9.3} & \num{82.0} & \num{118.0} & \num{147.0}\\
+cone & 177 & 0 & \num{7.2} & \num{0.4} & \num{6.5} & \num{7.1} & \num{8.4}\\
+shuttle & 123 & 0 & \num{4.4} & \num{0.2} & \num{3.8} & \num{4.3} & \num{5.4}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 4
+\begin{table}
+\caption{Summary Statistics for Imputed Data: Drafted and Undrafted Players}
+\centering
+\begin{tabular}[t]{lrrrrrrr}
+\toprule
+  & Unique (\#) & Missing (\%) & Mean & SD & Min & Median & Max\\
+\midrule
+.imp & 50 & 0 & \num{25.5} & \num{14.4} & \num{1.0} & \num{25.5} & \num{50.0}\\
+.id & 3762 & 0 & \num{1881.5} & \num{1086.0} & \num{1.0} & \num{1881.5} & \num{3762.0}\\
+ht & 19 & 0 & \num{73.9} & \num{2.7} & \num{64.0} & \num{74.0} & \num{82.0}\\
+wt & 197 & 0 & \num{241.1} & \num{45.4} & \num{144.0} & \num{230.0} & \num{384.0}\\
+forty & 144 & 0 & \num{4.8} & \num{0.3} & \num{4.2} & \num{4.7} & \num{5.8}\\
+bench & 41 & 0 & \num{19.4} & \num{6.4} & \num{3.0} & \num{19.0} & \num{44.0}\\
+vertical & 56 & 0 & \num{32.8} & \num{4.2} & \num{17.5} & \num{33.0} & \num{46.5}\\
+broad\_jump & 57 & 0 & \num{116.2} & \num{9.2} & \num{82.0} & \num{117.0} & \num{147.0}\\
+cone & 198 & 0 & \num{7.2} & \num{0.4} & \num{6.3} & \num{7.2} & \num{8.8}\\
+shuttle & 136 & 0 & \num{4.4} & \num{0.3} & \num{3.8} & \num{4.4} & \num{5.4}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 5
+\begin{table}
+\caption{Results for Regression Models: Draft Overall}
+\centering
+\begin{tabular}[t]{lcc}
+\toprule
+  & Model 1 & Model 2\\
+\midrule
+(Intercept) & \num{-190.763}*** & \num{-161.826}***\\
+ & (\num{13.389}) & (\num{13.356})\\
+wt & \num{-1.143}*** & \num{-1.117}***\\
+ & (\num{0.014}) & (\num{0.014})\\
+ht & \num{0.279}* & \num{0.174}\\
+ & (\num{0.115}) & (\num{0.115})\\
+forty & \num{85.682}*** & \num{79.312}***\\
+ & (\num{1.754}) & (\num{1.749})\\
+bench & \num{1.459}*** & \num{1.388}***\\
+ & (\num{0.045}) & (\num{0.045})\\
+vertical & \num{-0.164}+ & \num{-0.448}***\\
+ & (\num{0.087}) & (\num{0.087})\\
+broad\_jump & \num{-1.170}*** & \num{-1.124}***\\
+ & (\num{0.048}) & (\num{0.048})\\
+cone & \num{8.717}*** & \num{9.985}***\\
+ & (\num{1.146}) & (\num{1.141})\\
+shuttle & \num{47.926}*** & \num{50.284}***\\
+ & (\num{1.691}) & (\num{1.688})\\
+ACC1 &  & \num{-11.205}***\\
+ &  & (\num{0.663})\\
+Big101 &  & \num{-11.947}***\\
+ &  & (\num{0.621})\\
+Big121 &  & \num{-5.780}***\\
+ &  & (\num{0.757})\\
+PAC121 &  & \num{-13.284}***\\
+ &  & (\num{0.678})\\
+SEC1 &  & \num{-22.941}***\\
+ &  & (\num{0.561})\\
+\midrule
+Num.Obs. & \num{118050} & \num{118050}\\
+R2 & \num{0.103} & \num{0.116}\\
+R2 Adj. & \num{0.103} & \num{0.116}\\
+AIC & \num{1328047.4} & \num{1326308.8}\\
+BIC & \num{1328144.2} & \num{1326454.0}\\
+Log.Lik. & \num{-664013.687} & \num{-663139.391}\\
+F & \num{1697.823} & \num{1195.853}\\
+RMSE & \num{67.08} & \num{66.59}\\
+\bottomrule
+\multicolumn{3}{l}{\rule{0pt}{1em}+ p $<$ 0.1, * p $<$ 0.05, ** p $<$ 0.01, *** p $<$ 0.001}\\
+\end{tabular}
+\end{table}
+
+%Table 6
+\begin{table}
+\caption{Results for Logit Models: Drafted and Undrafted}
+\centering
+\begin{tabular}[t]{lcc}
+\toprule
+  & Model 3 & Model 4\\
+\midrule
+(Intercept) & \num{17.873}*** & \num{17.314}***\\
+ & (\num{0.345}) & (\num{0.347})\\
+wt & \num{0.033}*** & \num{0.033}***\\
+ & (\num{0.000}) & (\num{0.000})\\
+ht & \num{-0.008}** & \num{-0.008}**\\
+ & (\num{0.003}) & (\num{0.003})\\
+forty & \num{-3.483}*** & \num{-3.420}***\\
+ & (\num{0.046}) & (\num{0.046})\\
+bench & \num{0.015}*** & \num{0.016}***\\
+ & (\num{0.001}) & \vphantom{1} (\num{0.001})\\
+vertical & \num{0.017}*** & \num{0.023}***\\
+ & (\num{0.002}) & (\num{0.002})\\
+broad\_jump & \num{0.006}*** & \num{0.005}***\\
+ & (\num{0.001}) & (\num{0.001})\\
+cone & \num{-0.043} & \num{-0.065}*\\
+ & (\num{0.030}) & (\num{0.030})\\
+shuttle & \num{-2.104}*** & \num{-2.084}***\\
+ & (\num{0.044}) & (\num{0.045})\\
+ACC1 &  & \num{0.426}***\\
+ &  & \vphantom{1} (\num{0.018})\\
+Big101 &  & \num{0.246}***\\
+ &  & (\num{0.016})\\
+Big121 &  & \num{0.148}***\\
+ &  & (\num{0.019})\\
+PAC121 &  & \num{0.435}***\\
+ &  & (\num{0.018})\\
+SEC1 &  & \num{0.450}***\\
+ &  & (\num{0.015})\\
+\midrule
+Num.Obs. & \num{188100} & \num{188100}\\
+AIC & \num{219652.2} & \num{218336.5}\\
+BIC & \num{219743.5} & \num{218478.6}\\
+Log.Lik. & \num{-109817.119} & \num{-109154.268}\\
+F & \num{2812.751} & \num{1794.871}\\
+RMSE & \num{0.45} & \num{0.45}\\
+\bottomrule
+\multicolumn{3}{l}{\rule{0pt}{1em}+ p $<$ 0.1, * p $<$ 0.05, ** p $<$ 0.01, *** p $<$ 0.001}\\
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Results for Tree Models: Regression and Classification}
+\centering
+\begin{tabular}[t]{lllll}
+\toprule
+cost complexity & tree depth & min n & .estimate & alg\\
+\midrule
+0.00 & 20.00 & 30.00 & 54.25 & tree\\
+0.00 & 20.00 & 10.00 & 0.77 & tree\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\clearpage
+
+
+\end{document}
+
+
