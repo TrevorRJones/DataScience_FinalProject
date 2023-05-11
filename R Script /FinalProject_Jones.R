@@ -115,6 +115,28 @@ df.drafted <- complete(imp.data.drafted, "long")
 datasummary_skim(df.all)
 datasummary_skim(df.drafted)
 
+
+#### Linear Models ####
+# model for draft overall
+est1 <- lm(draft_ovr ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle,
+           data = df.drafted)
+# now include conference variables
+est2 <- lm(draft_ovr ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle +
+             ACC + Big10 + Big12 + PAC12 + SEC,
+           data = df.drafted)
+models1 <- list(est1, est2)
+modelsummary(models1, stars = T)
+
+
+# model for if drafted or not
+est3 <- glm(drafted ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle,
+            data = df.all, family = binomial(link = "logit"))
+est4 <- glm(drafted ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle +
+              ACC + Big10 + Big12 + PAC12 + SEC,
+            data = df.all, family = binomial(link = "logit"))
+models2 <- list(est3, est4)
+modelsummary(models2, stars = T)
+
 #### First group of Models: overall draft pick ####
 
 # Split data into training and testing data
@@ -180,110 +202,8 @@ df_test <- testing(df_split)
       tree_ans %<>% left_join(tree_test %>% slice(1),by=c(".metric",".estimator")) %>%
         mutate(alg = "tree") %>% select(-starts_with(".config"))
 
-      
-# NEURAL NETWORK #
-      
-      print('Starting NNET')
-      # set up the task and the engine
-      tune_nnet_spec <- mlp(
-        hidden_units = tune(), # tuning parameter
-        penalty = tune()
-      ) %>% 
-        set_engine("nnet") %>%
-        set_mode("regression")
-      
-      # define a set over which to try different values of the regularization parameter (number of neighbors)
-      nnet_parm_df1 <- tibble(hidden_units = seq(1,10))
-      lambda_grid   <- grid_regular(penalty(), levels = 10)
-      nnet_parm_df  <- full_join(nnet_parm_df1,lambda_grid,by=character())
-      
-      # 5-fold cross-validation
-      rec_folds_nnet <- vfold_cv(df_train, v = 3)
-      
-      # Workflow
-      rec_wf_nnet <- workflow() %>%
-        add_model(tune_nnet_spec) %>%
-        add_formula(draft_ovr ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle + SEC + 
-                      Big12 + Big10 + PAC12 + ACC + C + CB + DB + DE + DL + DT + EDGE + FB + ILB +
-                      K + LB + LS + OG + OL + OLB + OT + P + QB + RB + S + TE + WR)
-      
-      # Tuning results
-      rec_res_nnet <- rec_wf_nnet %>%
-        tune_grid(
-          resamples = rec_folds_nnet,
-          grid = nnet_parm_df
-        )
-      
-      # what is the best value of lambda?
-      top_acc_nnet  <- show_best(rec_res_nnet, metric = "rmse")
-      best_acc_nnet <- select_best(rec_res_nnet, metric = "rmse")
-      final_nnet_lasso <- finalize_workflow(rec_wf_nnet,
-                                            best_acc_nnet
-      )
-      print('*********** NEURAL NET **************')
-      nnet_test <- last_fit(final_nnet_lasso,df_split) %>%
-        collect_metrics()
-      
-      nnet_test %>% print(n = 1)
-      top_acc_nnet %>% print(n = 1)
-      
-      # combine results into a nice tibble (for later use)
-      nnet_ans <- top_acc_nnet %>% slice(1)
-      nnet_ans %<>% left_join(nnet_test %>% slice(1),by=c(".metric",".estimator")) %>%
-        mutate(alg = "nnet") %>% select(-starts_with(".config"))
-
-      
-# K NEAREST NEIGHBOR #
-      
-      print('Starting KNN')
-      # set up the task and the engine
-      tune_knn_spec <- nearest_neighbor(
-        neighbors = tune() # tuning parameter
-      ) %>% 
-        set_engine("kknn") %>%
-        set_mode("regression")
-      
-      # define a set over which to try different values of the regularization parameter (number of neighbors)
-      knn_parm_df <- tibble(neighbors = seq(1,30))
-      
-      # 3-fold cross-validation
-      rec_folds_knn <- vfold_cv(income_train, v = 3)
-      
-      # Workflow
-      rec_wf_knn <- workflow() %>%
-        add_model(tune_knn_spec) %>%
-        add_formula(draft_ovr ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle + SEC + 
-                      Big12 + Big10 + PAC12 + ACC + C + CB + DB + DE + DL + DT + EDGE + FB + ILB +
-                      K + LB + LS + OG + OL + OLB + OT + P + QB + RB + S + TE + WR)
-      
-      # Tuning results
-      rec_res_knn <- rec_wf_knn %>%
-        tune_grid(
-          resamples = rec_folds_knn,
-          grid = knn_parm_df
-        )
-      
-      # what is the best value of lambda?
-      top_acc_knn  <- show_best(rec_res_knn, metric = "rmse")
-      best_acc_knn <- select_best(rec_res_knn, metric = "rmse")
-      final_knn_lasso <- finalize_workflow(rec_wf_knn,
-                                           best_acc_knn
-      )
-      print('*********** K NEAREST NEIGHBORS **************')
-      knn_test <- last_fit(final_knn_lasso,df_split) %>%
-        collect_metrics()
-      
-      knn_test %>% print(n = 1)
-      top_acc_knn %>% print(n = 1)
-      
-      # combine results into a nice tibble (for later use)
-      knn_ans <- top_acc_knn %>% slice(1)
-      knn_ans %<>% left_join(knn_test %>% slice(1),by=c(".metric",".estimator")) %>%
-        mutate(alg = "knn") %>% select(-starts_with(".config"))
-
 # Report all answers in a single summary
-      all_ans <- bind_rows(tree_ans,nnet_ans,knn_ans)
-      datasummary_df(all_ans %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="markdown")
+      datasummary_df(tree_ans %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="markdown")
       
 #### Second Group of Models: Drafted or Undrafted ####
       
@@ -293,8 +213,8 @@ df_test <- testing(df_split)
       df_test <- testing(df_split)
       
       # because the prediction is a continuous variable, mode of the models will be regression
-      
-  # TREE MODEL #
+
+# TREE MODEL #
       
       print('Starting TREE')
       
@@ -350,107 +270,105 @@ df_test <- testing(df_split)
       tree_ans1 %<>% left_join(tree_test %>% slice(1),by=c(".metric",".estimator")) %>%
         mutate(alg = "tree") %>% select(-starts_with(".config"))
       
-      
-  # NEURAL NETWORK #
-      
-      print('Starting NNET')
-      # set up the task and the engine
-      tune_nnet_spec <- mlp(
-        hidden_units = tune(), # tuning parameter
-        penalty = tune()
-      ) %>% 
-        set_engine("nnet") %>%
-        set_mode("classification")
-      
-      # define a set over which to try different values of the regularization parameter (number of neighbors)
-      nnet_parm_df1 <- tibble(hidden_units = seq(1,10))
-      lambda_grid   <- grid_regular(penalty(), levels = 10)
-      nnet_parm_df  <- full_join(nnet_parm_df1,lambda_grid,by=character())
-      
-      # 5-fold cross-validation
-      rec_folds_nnet <- vfold_cv(df_train, v = 3)
-      
-      # Workflow
-      rec_wf_nnet <- workflow() %>%
-        add_model(tune_nnet_spec) %>%
-        add_formula(drafted ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle + SEC + 
-                      Big12 + Big10 + PAC12 + ACC + C + CB + DB + DE + DL + DT + EDGE + FB + ILB +
-                      K + LB + LS + OG + OL + OLB + OT + P + QB + RB + S + TE + WR)
-      
-      # Tuning results
-      rec_res_nnet <- rec_wf_nnet %>%
-        tune_grid(
-          resamples = rec_folds_nnet,
-          grid = nnet_parm_df
-        )
-      
-      # what is the best value of lambda?
-      top_acc_nnet  <- show_best(rec_res_nnet, metric = "accuracy")
-      best_acc_nnet <- select_best(rec_res_nnet, metric = "accuracy")
-      final_nnet_lasso <- finalize_workflow(rec_wf_nnet,
-                                            best_acc_nnet
-      )
-      print('*********** NEURAL NET **************')
-      nnet_test <- last_fit(final_nnet_lasso,df_split) %>%
-        collect_metrics()
-      
-      nnet_test %>% print(n = 1)
-      top_acc_nnet %>% print(n = 1)
-      
-      # combine results into a nice tibble (for later use)
-      nnet_ans1 <- top_acc_nnet %>% slice(1)
-      nnet_ans1 %<>% left_join(nnet_test %>% slice(1),by=c(".metric",".estimator")) %>%
-        mutate(alg = "nnet") %>% select(-starts_with(".config"))
-      
-      
- # K NEAREST NEIGHBOR #
-      
-      print('Starting KNN')
-      # set up the task and the engine
-      tune_knn_spec <- nearest_neighbor(
-        neighbors = tune() # tuning parameter
-      ) %>% 
-        set_engine("kknn") %>%
-        set_mode("classification")
-      
-      # define a set over which to try different values of the regularization parameter (number of neighbors)
-      knn_parm_df <- tibble(neighbors = seq(1,30))
-      
-      # 3-fold cross-validation
-      rec_folds_knn <- vfold_cv(income_train, v = 3)
-      
-      # Workflow
-      rec_wf_knn <- workflow() %>%
-        add_model(tune_knn_spec) %>%
-        add_formula(draft_ovr ~ wt + ht + forty + bench + vertical + broad_jump + cone + shuttle + SEC + 
-                      Big12 + Big10 + PAC12 + ACC + C + CB + DB + DE + DL + DT + EDGE + FB + ILB +
-                      K + LB + LS + OG + OL + OLB + OT + P + QB + RB + S + TE + WR)
-      
-      # Tuning results
-      rec_res_knn <- rec_wf_knn %>%
-        tune_grid(
-          resamples = rec_folds_knn,
-          grid = knn_parm_df
-        )
-      
-      # what is the best value of lambda?
-      top_acc_knn  <- show_best(rec_res_knn, metric = "accuracy")
-      best_acc_knn <- select_best(rec_res_knn, metric = "accuracy")
-      final_knn_lasso <- finalize_workflow(rec_wf_knn,
-                                           best_acc_knn
-      )
-      print('*********** K NEAREST NEIGHBORS **************')
-      knn_test <- last_fit(final_knn_lasso,df_split) %>%
-        collect_metrics()
-      
-      knn_test %>% print(n = 1)
-      top_acc_knn %>% print(n = 1)
-      
-      # combine results into a nice tibble (for later use)
-      knn_ans1 <- top_acc_knn %>% slice(1)
-      knn_ans1 %<>% left_join(knn_test %>% slice(1),by=c(".metric",".estimator")) %>%
-        mutate(alg = "knn") %>% select(-starts_with(".config"))
-      
       # Report all answers in a single summary
-      all_ans1 <- bind_rows(tree_ans1,nnet_ans1,knn_ans1)
-      datasummary_df(all_ans1 %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="markdown")
+      datasummary_df(tree_ans1 %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="markdown")
+      
+      all_ans <- bind_rows(tree_ans,tree_ans1)
+      datasummary_df(all_ans %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="markdown")
+      
+#### OUTPUTS AND VISUALIZATIONS ####
+# outputs
+  # tables
+  datasummary_skim(df, histogram = F, output = "sum.tex")  # initial data analysis
+  datasummary_skim(df.all, histogram = F, output = "sum1.tex") # imputed data for drafted and undrafted variables
+  datasummary_skim(df.drafted, histogram = F, output = "sum2.tex") # imputed data for all drafted individuals
+  modelsummary(models1, stars = T, output = "res1.tex") # regression models
+  modelsummary(models2, stars = T, output = "res2.tex") # logit models
+  datasummary_df(all_ans %>% select(-.metric,-.estimator,-mean,-n,-std_err),output="res3.tex")
+
+  # figures
+library(gridExtra)
+  # 40
+p1 <- df %>% filter(pos %in% c("QB", "CB", "WR", "RB", "DB", "S")) %>% 
+    ggplot(aes(x = forty, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "40 Yard Dash: Skill Positions")
+p2 <- df %>% filter(pos %in% c("ILB", "FB", "OLB", "TE", "EDGE", "LB")) %>% 
+    ggplot(aes(x = forty, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "40 Yard Dash: Big-Skill Positions")
+p3 <- df %>% filter(pos %in% c("OT", "OG", "DE", "DT", "C", "DL", "OL")) %>% 
+    ggplot(aes(x = forty, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "40 Yard Dash: Big Positions")
+fourty <- grid.arrange(p1,p2,p3, ncol = 3)
+ggsave("FOURTYSPLITS.png", fourty, width = 10, height = 4, dpi = 300)
+
+
+  #bench
+p4 <- df %>% filter(pos %in% c("QB", "CB", "WR", "RB", "DB", "S")) %>% 
+  ggplot(aes(x = bench, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Bench Press: Skill Positions")
+p5 <- df %>% filter(pos %in% c("ILB", "FB", "OLB", "TE", "EDGE", "LB")) %>% 
+  ggplot(aes(x = bench, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Bench Press: Big-Skill Positions")
+p6 <- df %>% filter(pos %in% c("OT", "OG", "DE", "DT", "C", "DL", "OL")) %>% 
+  ggplot(aes(x = bench, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Bench Press: Big Positions")
+benchpress <- grid.arrange(p4,p5,p6, ncol = 3)
+ggsave("BENCHPRESS.png", benchpress, width = 10, height = 4, dpi = 300)
+
+  
+  # broad jump
+p7 <- df %>% filter(pos %in% c("QB", "CB", "WR", "RB", "DB", "S")) %>% 
+  ggplot(aes(x = broad_jump, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Broad Jump: Skill Positions")
+p8 <- df %>% filter(pos %in% c("ILB", "FB", "OLB", "TE", "EDGE", "LB")) %>% 
+  ggplot(aes(x = broad_jump, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Broad Jump: Big-Skill Positions")
+p9 <- df %>% filter(pos %in% c("OT", "OG", "DE", "DT", "C", "DL", "OL")) %>% 
+  ggplot(aes(x = broad_jump, y = draft_ovr)) + geom_point() + geom_jitter() + 
+  theme_minimal() + labs(title = "Broad Jump: Big Positions")
+broadjump <- grid.arrange(p7,p8,p9, ncol = 3)
+ggsave("BROADJUMP.png", broadjump, width = 10, height = 4, dpi = 300)
+
+
+
+# distribution of 40 yd dash
+plot1 <- ggplot(data = df) +
+  geom_histogram(aes(x = forty, fill = factor(drafted)), 
+                 color = "black", 
+                 bins = 55, 
+                 alpha = 0.8) +
+  labs(title = "Distribution of Forty Yard Dash Times", 
+       x = "Forty Yard Dash Time (seconds)", 
+       y = "Count") +
+  scale_fill_manual(values = c("red", "navy"),
+                    name = "Drafted", 
+                    labels = c("No", "Yes")) + theme_minimal()
+ggsave("FORTYHISTO.png", plot1, width = 6, height = 4, dpi = 300)
+
+# distribution of bench press
+plot2 <- ggplot(data = df) +
+  geom_histogram(aes(x = bench, fill = factor(drafted)), 
+                 color = "black", 
+                 bins = 40, 
+                 alpha = 0.8) +
+  labs(title = "Distribution of Bench Press Reps", 
+       x = "Repetitions of 225 lbs Bench Press", 
+       y = "Count") +
+  scale_fill_manual(values = c("red", "navy"),
+                    name = "Drafted", 
+                    labels = c("No", "Yes")) + theme_minimal()
+ggsave("BENCHHISTO.png", plot2, width = 6, height = 4, dpi = 300)
+
+# horizontal jump
+plot3 <- ggplot(data = df) +
+  geom_histogram(aes(x = broad_jump, fill = factor(drafted)), 
+                 color = "black", 
+                 bins = 40, 
+                 alpha = 0.8) +
+  labs(title = "Distribution of Broad Jump Performances", 
+       x = "Distance of Broad Jump (Inches)", 
+       y = "Count") +
+  scale_fill_manual(values = c("red", "navy"),
+                    name = "Drafted", 
+                    labels = c("No", "Yes")) + theme_minimal()
+ggsave("JUMPHISTO.png", plot3, width = 6, height = 4, dpi = 300)
